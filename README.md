@@ -3,9 +3,7 @@ Second Coursework for Robotic --Comp313p
 
 This repository includes all files used for Completion of the Second Coursework.
 
-Major Additions:
-
-=================
+## Major Additions:
 
 In */src/comp313p/comp313p_explorer/explorer_node.py*: Modified to better explore the Map
 
