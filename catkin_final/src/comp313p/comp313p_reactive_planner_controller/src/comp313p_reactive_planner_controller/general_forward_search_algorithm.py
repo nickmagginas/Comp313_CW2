@@ -111,10 +111,10 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
             self.popCellFromQueue()
 
         # Check the start and end are not occupied
-        if (self.occupancyGrid.getCell(startCoords[0], startCoords[1]) > 0):
+        if (self.occupancyGrid.getCell(startCoords[0], startCoords[1]) == 1):
             return False
 
-        if (self.occupancyGrid.getCell(goalCoords[0], goalCoords[1]) > 0):
+        if (self.occupancyGrid.getCell(goalCoords[0], goalCoords[1]) == 1):
             return False
 
         # Get the start cell object and label it as such. Also set its
