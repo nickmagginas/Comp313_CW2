@@ -23,7 +23,9 @@ class ExplorerNode(ExplorerNodeBase):
 	def define_variables(self):
 	
 		# ------------- Variables For Later Use ----------------- #
-		
+
+
+		self.start_time = time.time()
 		self.frontier_list = []
 		self.blackList = []
 		self.current_pose_subscriber = rospy.Subscriber('/robot0/odom', Odometry, self.current_callback)
@@ -48,15 +50,21 @@ class ExplorerNode(ExplorerNodeBase):
 		self.frontier_list = [(x,y) for x in self.width_range for y in self.height_range if (self.isFrontierCell(x,y) and (x,y) not in self.blackList)] 
 		
 		# ------------ For Every Frontier Cell Check How Many Adjacent There Are ------------------------- #
+
+		self.sensitivity = 5
 		
 		for i in self.frontier_list:
 			frontiers = 0
-			for x in [-1,0,1]:
-				for y in [-1,0,1]:
-					if self.isFrontierCell(i[0]+x,i[1]+y):
-						frontiers -= 1
+			for x in range(i[0]-self.sensitivity, i[0]+self.sensitivity):
+				for y in range(i[1]-self.sensitivity, i[1]+self.sensitivity):
+					try:
+						if self.checkIfCellIsUnknown(x,y,0,0):
+							frontiers -= 1
+					except:
+						pass
 			self.frontiers_next.append(frontiers)
-			
+
+		
 		# ------------ Get Current Position --------------------------------------------------------------- #
 		
 		pose = self.current_pose.pose.pose
@@ -73,23 +81,26 @@ class ExplorerNode(ExplorerNodeBase):
 		self.distances = map(lambda x : hypot(x[1] - self.current_coordinates[1] , x[0] - self.current_coordinates[0]) , self.frontier_list)
 		
 		# ------------- Scale List Containing Adjacent Frontier Number to Ensure Equal Weighting ----------- #
+		try:
+			self.scaling = abs(max(distances)/max(self.frontiers_next))
+		except:
+			self.scaling = 1
 		
-		self.scaling = max(self.distances)/max(self.frontiers_next)
 		self.frontiers_next = [x*self.scaling for x in self.frontiers_next]
 		
 		# ------------- Calculate Score by Averaging Distance and Number of Frontiers ---------------------- #
-		
-		self.score = [(a+b)/2 for a,b in zip(self.distances, self.frontiers_next)]
+		self.score = [(2*a+b)/2 for a,b in zip(self.distances, self.frontiers_next)]
 		
 		# ------------ Order Frontier List Depending on Score ---------------------------------------------- # 
 		
 		self.frontier_list = [x for _,x in sorted(zip(self.score,self.frontier_list))]
-		
+		 
 		# ----------- Empty List Terminates or Get First Cell not in Blacklist as Target ------------------- #
 		
 		if self.frontier_list == []:
-			return False, None
 			print('No Frontiers Available')
+			return False, None
+			
 		for index,i in enumerate(self.frontier_list):
 			if i not in self.blackList:
 				self.target = i
